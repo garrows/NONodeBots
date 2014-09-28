@@ -1,0 +1,19 @@
+{
+  "boss": true,
+  "browser": true,
+  "curly": false,
+  "eqeqeq": true,
+  "eqnull": true,
+  "expr": "warn",
+  "forin": true,
+  "immed": false,
+  "latedef": true,
+  "newcap": true,
+  "noarg": true,
+  "node": true,
+  "quotmark": "single",
+  "strict": false,
+  "sub": true,
+  "undef": false,
+  "unused": true
+}
