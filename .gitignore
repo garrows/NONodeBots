@@ -6,6 +6,8 @@
 
 /dist/
 
+server/ssl
+
 /.tmp/
 
 *.log

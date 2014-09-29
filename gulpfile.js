@@ -108,6 +108,12 @@ gulp.task('components', function () {
 gulp.task('watch', function () {
     if (!GLOBAL.livereload) GLOBAL.livereload = require('gulp-livereload');
     livereload.listen();
+    // livereload.listen({
+    // 
+    //     key: 'server/ssl/localhost-key.pem',
+    //     cert: 'server/ssl/localhost-cert.pem'
+    // 
+    // });
 
     gulp.watch([paths.source + '/scripts/**/*'], ['scripts']);
     gulp.watch([paths.source + '/styles/**/*'], ['styles']);
