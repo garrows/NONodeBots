@@ -19,6 +19,7 @@
     "bootstrap": "~3.2.0",
     "underscore": "~1.7.0",
     "font-awesome": "~4.2.0",
-    "blueimp-canvas-to-blob": "~2.1.0"
+    "blueimp-canvas-to-blob": "~2.1.0",
+    "tracking.js": "~1.1.0"
   }
 }

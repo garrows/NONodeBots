@@ -97,6 +97,10 @@ gulp.task('components', function () {
             paths.components + '/angular-route/angular-route.js',
             paths.components + '/jquery/dist/jquery.js',
             paths.components + '/blueimp-canvas-to-blob/js/canvas-to-blob.js',
+            paths.components + '/tracking.js/build/tracking.js',
+            paths.components + '/tracking.js/build/data/face-min.js',
+            paths.components + '/tracking.js/build/data/eye-min.js',
+            paths.components + '/tracking.js/build/data/mouth-min.js',
             paths.components + '/underscore/underscore.js'
         ])
         .pipe(concat('components.js', {

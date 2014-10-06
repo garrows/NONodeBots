@@ -2,7 +2,6 @@ var modules = require('../modules'),
     service = require('../classes/service.class.js'),
     config = require('../config.js'),
     async = require('async'),
-    headtrackr = require('headtrackr'),
     Robot = require('../models/robot.model');
 
 
@@ -51,35 +50,14 @@ exports.Service = service.extend({
                 var domURL = window.URL || window.webkitURL;
                 video.src = domURL ? domURL.createObjectURL(stream) : stream;
 
-                var debugOverlay = document.getElementById('debug');
-
-                var htracker = new headtrackr.Tracker({
-                    // altVideo: {
-                    //     ogv: "./media/capture5.ogv",
-                    //     mp4: "./media/capture5.mp4"
-                    // },
-                    calcAngles: true,
-                    ui: false,
-                    headPosition: false,
-                    debug: debugOverlay,
-                    detectionInterval: 16
-                });
-                htracker.init(video, canvas);
-                htracker.start();
-
-                document.addEventListener("facetrackingEvent", function (event) {
-                    console.log(
-                        'event',
-                        event.x,
-                        event.y,
-                        event.width,
-                        event.height,
-                        event.angle
-                    );
-                });
-
                 setInterval(function () {
                     video.play();
+
+                    if (canvas.width != video.videoWidth && video.videoWidth != 0) {
+                        canvas.setAttribute('width', video.videoWidth.toString());
+                        canvas.setAttribute('height', video.videoHeight.toString());
+                    }
+
 
                     ctx.drawImage(video, 0, 0);
 
@@ -91,14 +69,39 @@ exports.Service = service.extend({
                         // img.data[i + 2] = 255 - img.data[i + 2];
                     }
 
+                    var colors = new tracking.ColorTracker(['cyan']);
+                    var objects = new tracking.ObjectTracker(['face']);
+                    objects.setInitialScale(4);
+                    objects.setStepSize(2);
+                    objects.setEdgesDensity(0.1);
+
+                    colors.on('track', function (event) {
+                        if (event.data.length === 0) {
+                            // No colors were detected in this frame.
+                        } else {
+                            event.data.forEach(function (rect) {
+                                // console.log(rect.x, rect.y, rect.height, rect.width, rect.color);
+                                ctx.strokeRect(rect.x, rect.y, rect.height, rect.width);
+                            });
+                        }
+                    });
+
+                    objects.on('track', function (event) {
+                        if (event.data.length === 0) {
+                            // No objects were detected in this frame.
+                        } else {
+                            event.data.forEach(function (rect) {
+                                // rect.x, rect.y, rect.height, rect.width
+                                ctx.strokeRect(rect.x, rect.y, rect.height, rect.width);
+                            });
+                        }
+                    });
+
+                    // tracking.track(canvas, colors);
+                    tracking.track(canvas, objects);
 
 
-
-
-                    ctx.putImageData(img, 0, 0);
-
-
-
+                    // ctx.putImageData(img, 0, 0);
 
                 }, 16);
 
