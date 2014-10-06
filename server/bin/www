@@ -18,11 +18,11 @@ if (fs.existsSync('./server/ssl/localhost-key.pem')) {
         cert: certificate
     }
 
-    https.createServer(options, app).listen(app.get('port'), function () {
-        console.log("Express server listening on port " + app.get('port'));
-    });
-} else {
-    var server = app.listen(app.get('port'), function () {
-        debug('Express server listening on port ' + server.address().port);
+    https.createServer(options, app).listen(app.get('port') + 1, function () {
+        console.log("Secure server listening on port " + (app.get('port') + 1));
     });
 }
+
+var server = app.listen(app.get('port'), function () {
+    debug('Express server listening on port ' + server.address().port);
+});
