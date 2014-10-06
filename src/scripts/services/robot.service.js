@@ -26,8 +26,8 @@ exports.Service = service.extend({
 
         self.state = self.STATES.AUTO;
 
-        self.canvas = document.getElementById("canvas");
-        self.ctx = self.canvas.getContext("2d");
+        // self.canvas = document.getElementById("canvas");
+        // self.ctx = self.canvas.getContext("2d");
 
         self.robot = new Robot(self.scope.$routeParams.robotId);
 
@@ -35,16 +35,48 @@ exports.Service = service.extend({
 
 
 
-        var video = document.createElement('video');
-        var canvas = document.getElementById("canvas");
-        var ctx = canvas.getContext("2d");
 
-        navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+        var wrapper = document.getElementById('robot-control');
 
-        if (navigator.getUserMedia) {
+        function createStream(webcamId) {
+            var video = document.createElement('video');
+            var canvas = document.createElement('canvas');
+            canvas.setAttribute('width', '800');
+            canvas.setAttribute('height', '800');
+            var ctx = canvas.getContext('2d');
+
+            wrapper.appendChild(canvas);
+
             function successCallback(stream) {
                 var domURL = window.URL || window.webkitURL;
                 video.src = domURL ? domURL.createObjectURL(stream) : stream;
+
+                var debugOverlay = document.getElementById('debug');
+
+                var htracker = new headtrackr.Tracker({
+                    // altVideo: {
+                    //     ogv: "./media/capture5.ogv",
+                    //     mp4: "./media/capture5.mp4"
+                    // },
+                    calcAngles: true,
+                    ui: false,
+                    headPosition: false,
+                    debug: debugOverlay,
+                    detectionInterval: 16
+                });
+                htracker.init(video, canvas);
+                htracker.start();
+
+                document.addEventListener("facetrackingEvent", function (event) {
+                    console.log(
+                        'event',
+                        event.x,
+                        event.y,
+                        event.width,
+                        event.height,
+                        event.angle
+                    );
+                });
 
                 setInterval(function () {
                     video.play();
@@ -59,11 +91,13 @@ exports.Service = service.extend({
                         // img.data[i + 2] = 255 - img.data[i + 2];
                     }
 
-                    // var htracker = new headtrackr.Tracker();
-                    // htracker.init(video, canvas);
-                    // htracker.start();
 
-                    // ctx.putImageData(img, 0, 0);
+
+
+
+                    ctx.putImageData(img, 0, 0);
+
+
 
 
                 }, 16);
@@ -77,9 +111,32 @@ exports.Service = service.extend({
             }
 
             navigator.getUserMedia({
+                // video: {
+                //     mandatory: {
+                //         sourceId: webcamId
+                //     }
+                // },
                 video: true,
                 audio: false
             }, successCallback, errorCallback);
+        }
+
+
+        navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+
+        if (navigator.getUserMedia) {
+
+            MediaStreamTrack.getSources(function (sources) {
+                for (var i = 0; i < sources.length; i++) {
+                    var source = sources[i];
+                    if (source.kind == 'video') {
+                        console.log(sources[i]);
+                        createStream(sources[i].id);
+                        return;
+                    }
+                }
+            });
+
         } else {
             console.log('Native web camera streaming (getUserMedia) is not supported in this browser.');
             return;
