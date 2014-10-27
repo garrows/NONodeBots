@@ -102,12 +102,9 @@ exports.Service = service.extend({
                 self.findFaces(canvas, colors, faces);
             }
 
-            if (self.trackFaces) {
-                self.drawRects(ctx, faces);
-            }
-            if (self.trackColors) {
-                self.drawRects(ctx, colors);
-            }
+
+            self.drawRects(ctx, faces);
+            self.drawRects(ctx, colors);
 
         }, 16);
     },
@@ -157,9 +154,13 @@ exports.Service = service.extend({
 
         if (self.trackColors) {
             tracking.track(canvas, detectColors);
+        } else {
+            colors.splice(0);
         }
         if (self.trackFaces) {
             tracking.track(canvas, detectFaces);
+        } else {
+            faces.splice(0);
         }
     }
 });
