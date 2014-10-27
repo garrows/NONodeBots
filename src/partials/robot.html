@@ -1,6 +1,18 @@
 <div class="container theme-showcase" role="main">
     <h1>Robot</h1>
-    <div id="robot-control">
-
+    <div id="robot-control"></div>
+    <div id="robot-options">
+        <ul>
+            <li>
+                <label class="checkbox">
+                    <input type="checkbox" id="checkboxError" value="option1" ng-model="robotService.trackFaces"> Track faces
+                </label>
+            </li>
+            <li>
+                <label class="checkbox">
+                    <input type="checkbox" id="checkboxError" value="option1" ng-model="robotService.trackColors"> Track colors
+                </label>
+            </li>
+        </ul>
     </div>
 </div>
