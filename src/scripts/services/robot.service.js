@@ -313,7 +313,7 @@ exports.Service = service.extend({
             if (!foundCommand.blockResponse) {
                 self.speak('OK');
             }
-        } else {
+        } else if (self.listenToHumans) {
             self.speak('I don\'t understand ' + userCommand);
         }
 
