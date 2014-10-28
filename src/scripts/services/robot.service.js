@@ -26,6 +26,8 @@ exports.Service = service.extend({
         self.state = self.STATES.AUTO;
         self.trackColors = false;
         self.trackFaces = false;
+        self.listenToHumans = false;
+
         self.recognisedSpeech = [];
         self.confirmSpeech = null;
         self.speechRecognitionListening = false;
@@ -257,11 +259,17 @@ exports.Service = service.extend({
                 var speechRecognitionAlternative = speechRecognitionResult[j];
 
                 //Is the user confirming an unsure command?
-                if (self.confirmSpeech && speechRecognitionAlternative.transcript == 'yes') {
-                    self.runVoiceCommand(self.confirmSpeech);
-                    self.confirmSpeech = null;
-                } else if (self.confirmSpeech) {
-                    self.speak('Ok. What did you say then?');
+                if (self.confirmSpeech) {
+                    if (speechRecognitionAlternative.transcript == 'yes') {
+                        self.runVoiceCommand(self.confirmSpeech);
+                    } else if (speechRecognitionAlternative.transcript == 'no') {
+                        self.speak('Ok. What did you say then?');
+                    } else {
+                        //Clear confirm and check command again.
+                        self.confirmSpeech = null;
+                        self.onSpeechRecognition(event);
+                        return;
+                    }
                     self.confirmSpeech = null;
                 } else {
                     //Check command if unsure.
@@ -294,7 +302,7 @@ exports.Service = service.extend({
         for (var i = 0; i < commands.length; i++) {
             var command = commands[i];
             var index = command.commands.indexOf(userCommand);
-            if (index !== -1) {
+            if (index !== -1 && (self.listenToHumans || command.alwaysListen)) {
                 foundCommand = command;
                 break;
             }
@@ -318,6 +326,35 @@ exports.Service = service.extend({
         //lazy cache
         if (!self.commands) {
             self.commands = [{
+                commands: ['ok robot', 'start listening'],
+                execute: function () {
+                    self.listenToHumans = true;
+                    self.speak('OK human. I\'m listening');
+                },
+                alwaysListen: true,
+                blockResponse: true
+            }, {
+                commands: ['hello robot', 'hi robot'],
+                execute: function () {
+                    self.listenToHumans = true;
+                    self.speak('Hello human');
+                },
+                alwaysListen: true,
+                blockResponse: true
+            }, {
+                commands: ['hello', 'hi there', 'hi'],
+                execute: function () {
+                    self.speak('Hello human');
+                },
+                blockResponse: true
+            }, {
+                commands: ['stop listening', 'shut up', 'shut up robot', 'goodbye', 'goodbye robot'],
+                execute: function () {
+                    self.listenToHumans = false;
+                    self.speak('OK human. Goodbye.');
+                },
+                blockResponse: true
+            }, {
                 commands: ['look for faces', 'follow me', 'where am i'],
                 execute: function () {
                     self.trackFaces = true;
@@ -334,7 +371,7 @@ exports.Service = service.extend({
                     self.trackFaces = false;
                 }
             }, {
-                commands: ['don\'t look for colors', 'stop looking for colors'],
+                commands: ['don\'t look for colors', 'stop looking for colours'],
                 execute: function () {
                     self.trackColors = false;
                 }
@@ -344,12 +381,6 @@ exports.Service = service.extend({
                     self.trackFaces = false;
                     self.trackColors = false;
                 }
-            }, {
-                commands: ['hello', 'hello robot', 'hi there', 'hi robot'],
-                execute: function () {
-                    self.speak('Hello human');
-                },
-                blockResponse: true
             }];
         }
         return self.commands;
