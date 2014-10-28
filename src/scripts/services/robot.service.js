@@ -26,9 +26,13 @@ exports.Service = service.extend({
         self.state = self.STATES.AUTO;
         self.trackColors = false;
         self.trackFaces = false;
+        self.recognisedSpeech = [];
+        self.confirmSpeech = null;
 
         self.robot = new Robot(self.scope.$routeParams.robotId);
 
+
+        self.listenForSpeech();
 
         navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
 
@@ -56,18 +60,17 @@ exports.Service = service.extend({
         var self = this;
 
         navigator.getUserMedia({
-            // video: { //Example of specifying id for using multiple cameras.
-            //     mandatory: {
-            //         sourceId: webcamId
-            //     }
-            // },
-            video: true,
-            audio: false
-        }, function (stream) {
-            self.cameraSuccess(stream);
-        }, function (error) {
-            console.error('An error occurred: [CODE ' + error.code + ']');
-        });
+                // video: { //Example of specifying id for using multiple cameras.
+                //     mandatory: {
+                //         sourceId: webcamId
+                //     }
+                // },
+                video: true,
+                audio: false
+            }, self.cameraSuccess.bind(self),
+            function (error) {
+                console.error('An error occurred: [CODE ' + error.code + ']');
+            });
     },
 
     cameraSuccess: function (stream) {
@@ -162,5 +165,141 @@ exports.Service = service.extend({
         } else {
             faces.splice(0);
         }
-    }
+    },
+
+    listenForSpeech: function () {
+        var self = this;
+        var recognition = new webkitSpeechRecognition();
+
+        recognition.onend = function () {
+            self.listenForSpeech();
+        }
+        recognition.onerror = function (err) {
+            if (err.error != 'no-speech') {
+                console.log('speech error', err);
+            }
+        };
+        // recognition.onaudioend        
+        // recognition.onaudiostart        
+        // recognition.onnomatch        
+        // recognition.onsoundend        
+        // recognition.onsoundstart        
+        // recognition.onspeechend        
+        // recognition.onspeechstart        
+        // recognition.onstart        
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.onresult = self.onSpeechRecognition.bind(self);
+        recognition.start();
+    },
+
+    onSpeechRecognition: function (event) {
+        var self = this;
+        console.log("speech event", event);
+        for (var i = 0; i < event.results.length; i++) {
+            var speechRecognitionResult = event.results[i];
+            for (var j = 0; j < speechRecognitionResult.length; j++) {
+                var speechRecognitionAlternative = speechRecognitionResult[j];
+
+                console.log("speech result", Math.round(speechRecognitionAlternative.confidence * 100) + '%', speechRecognitionAlternative.transcript);
+
+                //Is the user confirming an unsure command?
+                if (self.confirmSpeech && speechRecognitionAlternative.transcript == 'yes') {
+                    self.runVoiceCommand(self.confirmSpeech);
+                    self.confirmSpeech = null;
+                } else if (self.confirmSpeech) {
+                    var msg = new SpeechSynthesisUtterance('Ok. What did you say then?');
+                    window.speechSynthesis.speak(msg);
+                    self.confirmSpeech = null;
+                } else {
+                    //Check command if unsure.
+                    if (speechRecognitionAlternative.confidence < .4) {
+                        self.confirmSpeech = speechRecognitionAlternative.transcript;
+                        var msg = new SpeechSynthesisUtterance('Did you say, ' + speechRecognitionAlternative.transcript + '?');
+                        window.speechSynthesis.speak(msg);
+                    } else {
+                        self.runVoiceCommand(speechRecognitionAlternative.transcript);
+                        self.confirmSpeech = null;
+                    }
+                }
+            }
+        }
+    },
+
+    runVoiceCommand: function (userCommand) {
+        var self = this;
+        self.recognisedSpeech.unshift({
+            transcript: userCommand
+        });
+
+        var commands = self.getCommands();
+
+        //Look for a valid command.
+        var foundCommand = null;
+        for (var i = 0; i < commands.length; i++) {
+            var command = commands[i];
+            var index = command.commands.indexOf(userCommand);
+            if (index !== -1) {
+                foundCommand = command;
+                break;
+            }
+        }
+
+        if (foundCommand) {
+            foundCommand.execute();
+            if (foundCommand.blockResponse == false) {
+                var msg = new SpeechSynthesisUtterance('OK');
+                window.speechSynthesis.speak(msg);
+            }
+        } else {
+            var msg = new SpeechSynthesisUtterance('I don\'t understand ' + userCommand);
+            window.speechSynthesis.speak(msg);
+        }
+
+        App.scope.$apply();
+    },
+
+    getCommands: function () {
+        var self = this;
+
+        //lazy cache
+        if (!self.commands) {
+            self.commands = [{
+                commands: ['look for faces', 'follow me', 'where am i'],
+                execute: function () {
+                    self.trackFaces = true;
+                }
+            }, {
+                commands: ['look for colors', 'look for colours', 'where is the ball', 'where\'s the ball '],
+                execute: function () {
+                    self.trackColors = true;
+                }
+
+            }, {
+                commands: ['don\'t look for faces', 'don\'t follow me', 'stop looking for faces', 'stop following me'],
+                execute: function () {
+                    self.trackFaces = false;
+                }
+            }, {
+                commands: ['don\'t look for colors', 'stop looking for colors'],
+                execute: function () {
+                    self.trackColors = false;
+                }
+            }, {
+                commands: ['stop looking'],
+                execute: function () {
+                    self.trackFaces = false;
+                    self.trackColors = false;
+                }
+            }, {
+                commands: ['hello', 'hello robot', 'hi there', 'hi robot'],
+                execute: function () {
+                    var msg = new SpeechSynthesisUtterance('Hello human');
+                    window.speechSynthesis.speak(msg);
+                },
+                blockResponse: true
+            }];
+        }
+        return self.commands;
+    },
 });

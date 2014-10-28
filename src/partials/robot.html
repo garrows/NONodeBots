@@ -5,13 +5,20 @@
         <ul>
             <li>
                 <label class="checkbox">
-                    <input type="checkbox" id="checkboxError" value="option1" ng-model="robotService.trackFaces"> Track faces
+                    <input type="checkbox" id="checkboxError" value="option1" ng-model="robotService.trackFaces"> Look for faces
                 </label>
             </li>
             <li>
                 <label class="checkbox">
-                    <input type="checkbox" id="checkboxError" value="option1" ng-model="robotService.trackColors"> Track colors
+                    <input type="checkbox" id="checkboxError" value="option1" ng-model="robotService.trackColors"> Look for colors
                 </label>
+            </li>
+        </ul>
+    </div>
+    <div id="recognised-speech">
+        <ul>
+            <li ng-repeat="speech in robotService.recognisedSpeech">
+                {{speech.transcript}}
             </li>
         </ul>
     </div>
