@@ -28,6 +28,9 @@ exports.Service = service.extend({
         self.trackFaces = false;
         self.recognisedSpeech = [];
         self.confirmSpeech = null;
+        self.speechRecognitionListening = false;
+        self.isSpeaking = false;
+        self.speechBacklog = [];
 
         self.robot = new Robot(self.scope.$routeParams.robotId);
 
@@ -169,54 +172,106 @@ exports.Service = service.extend({
 
     listenForSpeech: function () {
         var self = this;
-        var recognition = new webkitSpeechRecognition();
+        if (!self.speechRecogintion) {
+            self.speechRecogintion = new webkitSpeechRecognition();
+            var safetyTimeout = null;
+            self.speechRecogintion.onend = function () {
+                self.speechRecognitionListening = false;
+                App.scope.$apply();
 
-        recognition.onend = function () {
-            self.listenForSpeech();
-        }
-        recognition.onerror = function (err) {
-            if (err.error != 'no-speech') {
-                console.log('speech error', err);
+                if (self.speechBacklog.length == 0) {
+                    self.listenForSpeech();
+                    return;
+                }
+
+                //Process the speaking queue
+                var callbackCount = self.speechBacklog.length;
+                while (self.speechBacklog.length > 0) {
+                    var msg = self.speechBacklog.pop();
+                    var utterance = new SpeechSynthesisUtterance(msg);
+                    utterance.onend = function () {
+                        callbackCount--;
+                        if (callbackCount == 0) {
+                            self.listenForSpeech();
+                        }
+                    }
+                    window.speechSynthesis.speak(utterance);
+                }
+
+                //utterance.onend seems buggy. This is a safety.
+                clearTimeout(safetyTimeout);
+                safetyTimeout = setTimeout(function () {
+                    try {
+                        self.speechRecogintion.start();
+                        console.log('Safety timeout just saved the day');
+                    } catch (e) {}
+                }, 4000);
+
+
+
             }
-        };
-        // recognition.onaudioend        
-        // recognition.onaudiostart        
-        // recognition.onnomatch        
-        // recognition.onsoundend        
-        // recognition.onsoundstart        
-        // recognition.onspeechend        
-        // recognition.onspeechstart        
-        // recognition.onstart        
-        recognition.continuous = false;
-        recognition.interimResults = false;
-        recognition.onresult = self.onSpeechRecognition.bind(self);
-        recognition.start();
+            self.speechRecogintion.onerror = function (err) {
+                if (err.error != 'no-speech') {
+                    console.log('speech error', err);
+                    self.speechRecognitionListening = false;
+                    App.scope.$apply();
+                }
+
+            };
+            self.speechRecogintion.onstart = function (err) {
+                self.speechRecognitionListening = true;
+                App.scope.$apply();
+            };
+            self.speechRecogintion.onresult = self.onSpeechRecognition.bind(self);
+            // self.speechRecogintion.onaudioend        
+            // self.speechRecogintion.onaudiostart        
+            // self.speechRecogintion.onnomatch        
+            // self.speechRecogintion.onsoundend        
+            // self.speechRecogintion.onsoundstart        
+            // self.speechRecogintion.onspeechend        
+            // self.speechRecogintion.onspeechstart        
+            // self.speechRecogintion.onstart        
+        }
+
+
+
+        self.speechRecogintion.continuous = false;
+        self.speechRecogintion.interimResults = false;
+        //Try catch because the safetyTimeout might have started it already
+        try {
+            self.speechRecogintion.start();
+        } catch (e) {}
+    },
+
+    speak: function (msg) {
+        var self = this;
+        self.speechBacklog.push(msg);
+        self.speechRecogintion.stop();
     },
 
     onSpeechRecognition: function (event) {
         var self = this;
-        console.log("speech event", event);
         for (var i = 0; i < event.results.length; i++) {
             var speechRecognitionResult = event.results[i];
             for (var j = 0; j < speechRecognitionResult.length; j++) {
                 var speechRecognitionAlternative = speechRecognitionResult[j];
-
-                console.log("speech result", Math.round(speechRecognitionAlternative.confidence * 100) + '%', speechRecognitionAlternative.transcript);
 
                 //Is the user confirming an unsure command?
                 if (self.confirmSpeech && speechRecognitionAlternative.transcript == 'yes') {
                     self.runVoiceCommand(self.confirmSpeech);
                     self.confirmSpeech = null;
                 } else if (self.confirmSpeech) {
-                    var msg = new SpeechSynthesisUtterance('Ok. What did you say then?');
-                    window.speechSynthesis.speak(msg);
+                    self.speak('Ok. What did you say then?');
                     self.confirmSpeech = null;
                 } else {
                     //Check command if unsure.
-                    if (speechRecognitionAlternative.confidence < .4) {
+                    if (speechRecognitionAlternative.confidence < .3) {
                         self.confirmSpeech = speechRecognitionAlternative.transcript;
-                        var msg = new SpeechSynthesisUtterance('Did you say, ' + speechRecognitionAlternative.transcript + '?');
-                        window.speechSynthesis.speak(msg);
+                        var question = 'Did you say, "' + speechRecognitionAlternative.transcript + '"?'
+                        self.speak(question);
+                        self.recognisedSpeech.unshift({
+                            transcript: question
+                        });
                     } else {
                         self.runVoiceCommand(speechRecognitionAlternative.transcript);
                         self.confirmSpeech = null;
@@ -247,13 +302,11 @@ exports.Service = service.extend({
 
         if (foundCommand) {
             foundCommand.execute();
-            if (foundCommand.blockResponse == false) {
-                var msg = new SpeechSynthesisUtterance('OK');
-                window.speechSynthesis.speak(msg);
+            if (!foundCommand.blockResponse) {
+                self.speak('OK');
             }
         } else {
-            var msg = new SpeechSynthesisUtterance('I don\'t understand ' + userCommand);
-            window.speechSynthesis.speak(msg);
+            self.speak('I don\'t understand ' + userCommand);
         }
 
         App.scope.$apply();
@@ -294,8 +347,7 @@ exports.Service = service.extend({
             }, {
                 commands: ['hello', 'hello robot', 'hi there', 'hi robot'],
                 execute: function () {
-                    var msg = new SpeechSynthesisUtterance('Hello human');
-                    window.speechSynthesis.speak(msg);
+                    self.speak('Hello human');
                 },
                 blockResponse: true
             }];

@@ -15,7 +15,9 @@
             </li>
         </ul>
     </div>
-    <div id="recognised-speech">
+    <div id="speech">
+        <div ng-show="robotService.speechRecognitionListening">Robot listening</div>
+        <div ng-hide="robotService.speechRecognitionListening">Robot not listening</div>
         <ul>
             <li ng-repeat="speech in robotService.recognisedSpeech">
                 {{speech.transcript}}
