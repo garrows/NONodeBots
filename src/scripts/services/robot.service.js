@@ -40,7 +40,6 @@ exports.Service = service.extend({
         self.listenForSpeech();
 
         navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
-        window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition || null;
 
         if (navigator.getUserMedia) {
 
@@ -176,7 +175,8 @@ exports.Service = service.extend({
     listenForSpeech: function () {
         var self = this;
         if (!self.speechRecogintion) {
-            self.speechRecogintion = new SpeechRecognition();
+            window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+            self.speechRecogintion = new window.SpeechRecognition();
             var safetyTimeout = null;
             self.speechRecogintion.onend = function () {
                 self.speechRecognitionListening = false;
