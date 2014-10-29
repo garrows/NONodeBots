@@ -37,7 +37,7 @@ gulp.task('styles', function () {
 gulp.task('fonts', function () {
     var stream = gulp.src(
             [
-                paths.components + '/bootstrap/fonts/*',
+                // paths.components + '/bootstrap/fonts/*',
                 paths.components + '/font-awesome/fonts/*',
             ])
         .pipe(gulp.dest(paths.distribution + '/assets/fonts'));
