@@ -23,15 +23,25 @@ gulp.task('scripts', ['components'], function () {
     return stream;
 });
 
-gulp.task('styles', function () {
+gulp.task('less', function () {
     var stream = gulp.src(paths.source + '/styles/index.less')
         .pipe(less())
-        .pipe(rename('styles.css'))
+        .pipe(rename('styles.tmp.css'))
         .pipe(gulp.dest(paths.distribution + '/assets/styles'));
 
     if (GLOBAL.livereload) stream.pipe(livereload());
 
     return stream;
+});
+
+gulp.task('styles', ['less'], function () {
+    return gulp.src([
+            paths.components + '/angular/angular-csp.css',
+            paths.distribution + '/assets/styles/styles.tmp.css',
+
+        ])
+        .pipe(concat('styles.css'))
+        .pipe(gulp.dest(paths.distribution + '/assets/styles'));
 });
 
 gulp.task('fonts', function () {

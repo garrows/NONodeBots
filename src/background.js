@@ -7,7 +7,7 @@
 chrome.app.runtime.onLaunched.addListener(function () {
     // chrome.app.window.create('source.html', {
     chrome.app.window.create('index.html', {
-        width: 400,
-        height: 400,
+        width: 1000,
+        height: 800,
     });
 });

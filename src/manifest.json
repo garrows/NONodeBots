@@ -22,6 +22,10 @@
         }
     },
     "permissions": [
-        "<all_urls>"
+        "<all_urls>",
+        "serial",
+        "videoCapture",
+        "audioCapture",
+        "location"
     ]
 }
