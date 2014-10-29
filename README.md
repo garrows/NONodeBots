@@ -16,7 +16,8 @@ This approach unleashes powerful HTML5 tech like:
 
 This was done for a talk at http://campjs.com/#nonodebots-robotics-in-your-browser. Hopefully there will be a video soon.
 
-<iframe class="vine-embed" src="https://vine.co/v/OZVYOi5Zaqu/embed/simple?audio=1&related=0" width="320" height="320" frameborder="0"></iframe><script async src="//platform.vine.co/static/scripts/embed.js" charset="utf-8"></script>
+![GrumpyBot](http://giant.gfycat.com/SomeUnderstatedAtlanticridleyturtle.gif)
+
 
 # Development as a Webpage
 
