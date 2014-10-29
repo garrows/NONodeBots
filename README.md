@@ -4,7 +4,7 @@
 
 # SSL 
 
-To stop chrome asking for camera permissions on every reload you will need to use https.
+To stop chrome asking for camera permissions on every reload you will need to use https. 
 ```
 mkdir server/ssl
 cd server/ssl
