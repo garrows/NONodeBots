@@ -2,7 +2,9 @@
   "name": "NoNodebots",
   "version": "1.0.0",
   "description": "NoNodebot Demo",
+  "main": "server/bin/www",
   "scripts": {
+    "start": "node ./server/bin/www",
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepublish": "bower install && gulp"
   },
