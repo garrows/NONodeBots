@@ -292,9 +292,11 @@ exports.Service = service.extend({
 
     runVoiceCommand: function (userCommand) {
         var self = this;
-        self.recognisedSpeech.unshift({
-            transcript: userCommand
-        });
+        if (self.listenToHumans) {
+            self.recognisedSpeech.unshift({
+                transcript: userCommand
+            });
+        }
 
         var commands = self.getCommands();
 
